@@ -1,0 +1,205 @@
+---
+title: "*Insights Unveiled for Global Dynamics in GDP, Population, Life, Defense and Education in 2020* "
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+
+output:
+  html_document:
+    css: styles.css
+---
+
+```{=html}
+<style>
+  body {
+    background-color: lightgreen;
+    color: black;
+  }
+</style>
+```
+```{r}
+#| label: setup
+#| include: false
+
+#install.packages("tidyverse")
+library(tidyverse)
+
+#install.packages("ggplot2")
+library(ggplot2)
+
+#install.packages("maps")
+
+library(ggplot2)
+
+unicef_indicator_1 <- read.csv("/cloud/project/Yoshika/unicef_indicator_1.csv")
+unicef_metadata <- read.csv("/cloud/project/Yoshika/unicef_metadata.csv")
+
+unicef_indicator_1 <- unicef_indicator_1 %>% 
+  rename(year = time_period)
+
+merged_data <- merge(unicef_indicator_1, unicef_metadata, by = c("country", "year"))
+```
+
+## Closing the Gap: Why Gender Matters in Out-of-School Rates
+
+A child's basic rights is to be given the opportunity to receive primary education. A solid foundation and possibilities for achievement in the future could be established through a strong primary education. The fourth objective of the Sustainable Development Agenda acknowledges the significance of primary education by declaring that universal opportunity for primary education is one of the primary objectives for ensuring a high-quality education that is equitable and inclusive while encouraging opportunities for lifelong learning for everyone by 2030. Primary education tends to be for children aged 6 to 11, however standards differ.
+
+## Data
+
+```{r}
+library(dplyr)
+library(ggmap)
+
+options(scipen = 999)
+
+# Filter data for the year 2020
+pop_2020 <- unicef_metadata %>% 
+  filter(year == 2020)
+
+# Load world map data
+map_world <- map_data("world")
+
+# Join population data with map data
+map_pop_2020 <- full_join(map_world, pop_2020, by = c("region" = "country"))
+
+
+# Define breaks and labels for the population scale
+breaks <- c(0, 1e6, 2e6, 5e6, 1e7, 2e7, 5e7, 1e8)
+labels <- scales::comma(breaks)
+```
+
+## World Map
+
+```{r}
+library(dplyr)
+library(ggmap)
+
+options(scipen = 999)
+
+# Filter data for the year 2020
+pop_2020 <- unicef_metadata %>% 
+  filter(year == 2020)
+
+# Load world map data
+map_world <- map_data("world")
+
+# Join population data with map data
+map_pop_2020 <- full_join(map_world, pop_2020, by = c("region" = "country"))
+
+# Define breaks and labels for the population scale
+breaks <- seq(0, max(breaks), length.out = length(breaks))
+labels <- scales::comma(breaks / 1e3)  # Display numbers in thousands (shorthand notation)
+labels <- gsub(",", "", labels)  # Remove commas from labels
+labels <- gsub("0(?=k$)", "", labels, perl = TRUE)  # Remove trailing zeroes before "k"
+
+# Plot world population distribution
+ggplot(data = map_pop_2020, aes(x = long, y = lat, group = group, fill = Population..total)) +
+  geom_polygon(color = "black", size = 0.1) +  
+  scale_fill_viridis_c(name = "Population (in 000s)", na.value = "grey90", 
+                        breaks = breaks, labels = labels, limits = c(0, max(breaks))) +  
+  labs(title = "World Population Distribution (2020)") +  
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 16, hjust = 0.5),
+        legend.position = "bottom",  # Position legend at the bottom
+        legend.title = element_text(size = 12),  # Increase legend title size
+        legend.text = element_text(size = 10),  # Increase legend text size
+        legend.key.width = unit(2.5, "cm"),  # Increase legend key width for better display
+        axis.text.x = element_blank(), axis.text.y = element_blank(),  
+        axis.title.x = element_blank(), axis.title.y = element_blank())
+```
+
+A tremendous amount of development has been accomplished in the field of elementary education for everyone. In 2021, the revised net rate of attendance was 87% globally, indicating that around 4/5 of the children enrolled in primary school attended school. furthermore, there have been more than 35% fewer children that are not attending school than the previous two decades earlier. There still has a long way to go, however, as 64 million primary school-age children have not enrolled in education, the most of them are from communities that are marginalized.
+
+## Bar Chart
+
+```{r}
+# Create a bar chart
+ggplot(unicef_indicator_1[unicef_indicator_1$sex != "Total", c("country", "obs_value", "sex")], aes(x = reorder(country, -obs_value), y = obs_value, fill = sex)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bar Chart", x = "Country", y = "Out-of-school Rate") +
+  theme_minimal() 
+
+
+ggplot(unicef_indicator_1[unicef_indicator_1$sex != "Total", c("country", "obs_value", "sex")], aes(x = reorder(country, -obs_value), y = obs_value, fill = sex)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bar Chart", x = "Country", y = "Out-of-school Rate") +
+  theme(axis.text.x = element_text(angle =45, hjust = 1)) 
+
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Filter data to only include non-total values for sex
+indicator_filtered <- unicef_indicator_1[unicef_indicator_1$sex != "Total", c("country", "obs_value", "sex")]
+
+# Select top 20 countries with highest out-of-school rate
+indicator_top20 <- indicator_filtered %>%
+  group_by(country) %>%
+  summarise(avg_obs_value = mean(obs_value)) %>%
+  top_n(20, wt = avg_obs_value) %>%
+  left_join(indicator_filtered, by = "country")
+
+# Create bar chart
+ggplot(indicator_top20, aes(x = reorder(country, -obs_value), y = obs_value, fill = sex)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 20 Countries with Highest Out-of-school Rate",
+       x = "Country",
+       y = "Out-of-school Rate") +
+  theme(axis.text.x = element_text(angle =45, hjust = 1))
+```
+
+The international community recognizes the trans formative power of primary education. As you mentioned, Sustainable Development Goal 4 highlights the importance of ensuring inclusive and equitable quality education, with a focus on primary education, by 2030. This global commitment reflects the understanding that primary education is not just a right, but an investment in a brighter future for all.
+
+Out-of-school rates remain a significant challenge across the globe, particularly in developing countries. While achieving universal primary education is a key goal of the Sustainable Development Agenda, a sobering reality exists. According to the World Top 20 Project, several countries grapple with exceptionally high out-of-school rates.
+
+At the forefront of this challenge are countries like Somalia, Nigeria, Yemen, Egypt, Sudan Here, a substantial portion of children in the primary school age range, typically 6 to 11, lack access to education. This translates to a missed opportunity to build a strong foundation for their future and contribute meaningfully to society.
+
+## Scatter plot
+
+While out-of-school rates are a pressing issue globally, particularly in developing nations, the problem isn't always equal for boys and girls. Historically, girls have faced greater barriers to education, leading to a wider gender gap in out-of-school rates.
+
+Thankfully, this gap has been narrowing in recent years. According to the UNESCO Institute for Statistics, globally, there are now more girls enrolled in primary education than boys. However, disparities still persist in many regions
+
+Ensuring equal access to education for girls is crucial. Educated girls are more likely to be healthy, participate in the workforce, and contribute to their communities. They are also less likely to marry young and have healthier children. Closing the gender gap in out-of-school rates is not just about fairness; it's about unlocking the full potential of every child and building a brighter future for all.
+
+```{r}
+#A scatterplot with a linear regression line
+
+#new
+ggplot(data = unicef_indicator_1, aes(x = year, y = obs_value)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+#female
+indicator_female <- unicef_indicator_1 %>%
+  filter(sex == "Female")
+
+ggplot(data = indicator_female, aes(x = year, y = obs_value)) +
+  geom_point()
+```
+
+```{r}
+library(ggplot2)
+
+# Filter the dataframe to include only rows for Afghanistan
+ireland_df <- unicef_metadata[unicef_metadata$country == "Ireland",]
+
+# Create a time series chart
+ggplot(ireland_df, aes(x = year, y = `Population..total`)) +
+  geom_line() +
+  labs(title = "Population of Ireland over time",
+       x = "Year",
+       y = "Population (total)") +
+  theme_minimal() 
+```
+
+## Time Series
+
+Ireland boasts a very different story compared to the global challenges of out-of-school rates. Here, education is compulsory from ages 6 to 16, and the vast majority of children attend school throughout this period.
+
+Data from the Central Statistics Office (CSO) in Ireland indicates very low out-of-school rates for both boys and girls. The most recent data focuses on a broader category – young people who are neither in employment, education, or training (NEET). In 2018, the CSO reported that about one in eight young men and women fell into this category, suggesting minimal disparity between genders.
+
+While Ireland celebrates its high participation rates in education, there's always room for improvement. Efforts are ongoing to ensure equitable access to quality education for all children, regardless of background or socioeconomic status. This may involve addressing any lingering achievement gaps or disparities in subject selection between boys and girls observed in higher education.

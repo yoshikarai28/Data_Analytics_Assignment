@@ -1,0 +1,110 @@
+---
+title: "Data Analytics Assigment"
+author: "Manisha"
+format: html
+server: shiny
+---
+
+## Deprivation per Children: 
+
+## For governments, international organizations, and politicians to effectively battle poverty, advance gender equality, and enhance the general well-being of children and populations globally, these indicators are essential. The intricate interaction of economic, social, and cultural elements that contributes to differences in access to opportunities and resources must be considered in any effort to combat poverty and inequality.
+
+## DATA
+
+```{r}
+library(tidyverse)
+library(readr)
+library(maps)
+library(ggplot2)
+```
+
+```{r}
+getwd()
+
+indicator <- read_csv("unicef_indicator_manisha.csv")
+metadata <- read_csv("unicef_metadata.csv")
+```
+
+```{r}
+indicator <- indicator %>% 
+  rename(year = time_period)
+
+merged_data <- merge(unicef_indicator_1, unicef_metadata, by = c("country", "year"))
+```
+
+## Population Statistics
+
+This statistic highlights the finding that there is a 0.39% disparity in the levels of deprivation experienced by children of each gender. This implies that disparate treatment or resource access based on gender may be caused by specific sociological or cultural variables. For children of all genders to have equal opportunities and rights, this gap must be closed.
+
+```{r}
+library(dplyr)
+library(ggmap)
+
+options(scipen = 999)
+
+pop_2015 <- unicef_metadata %>% 
+  filter(year == 2015)
+
+map_world <- map_data("world")
+
+map_pop_2015 <- full_join(map_world, pop_2015, by = c("region" = "country"))
+
+breaks <- c(0, 1e6, 2e6, 5e6, 1e7, 2e7, 5e7, 1e8)
+labels <- scales::comma(breaks)
+
+ggplot(data = map_pop_2015, aes(x = long, y = lat, group = group, fill = Population..total)) +
+  geom_polygon(color = "black", size = 0.1) +  
+  scale_fill_viridis_c(name = "Population", na.value = "grey90") +  
+  labs(title = "World Population Distribution (2015)") +  
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 16, hjust = 0.5))+ 
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank(),  
+        axis.title.x = element_blank(), axis.title.y = element_blank())  
+```
+
+Scatter Plot
+
+A poorer economy is frequently indicated by a lower GDP per capita, and this can have a negative impact on many elements of life, including children's life expectancy. Children may be more vulnerable to malnutrition, receive less quality healthcare, and have less access to education in lower-income nations. These factors can have a detrimental effect on the health and wellbeing of children.
+
+```{r}
+
+#A scatterplot with a linear regression line
+
+#new
+ggplot(data = indicator, aes(x = year, y = obs_value)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+ labs(title = "Scatter Plot", x = "Year", y = "GDP")
+  
+```
+
+Population in Ireland
+
+```{r}
+library(ggplot2)
+
+# Filter the dataframe to include only rows for Afghanistan
+ireland_df <- metadata[metadata$country == "Ireland",]
+
+# Create a time series chart
+ggplot(ireland_df, aes(x = year, y = `Population, total`)) +
+  geom_line() +
+  labs(title = "Population of Ireland over time",
+       x = "Year",
+       y = "Population (total)") +
+  theme_minimal()
+```
+
+Bar Graph
+
+```{r}
+
+
+
+ggplot(indicator[indicator$sex != "Total", c("country", "obs_value", "sex")], aes(x = reorder(country, -obs_value), y = obs_value, fill = sex)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bar Chart", x = "Country", y = "sex") +
+  theme(axis.text.x = element_text(angle =45, hjust = 1)) 
+
+
+```

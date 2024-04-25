@@ -1,0 +1,175 @@
+---
+title: "Data Analytics Assignment"
+author: "Shweta Bobhate"
+format: html
+server: shiny
+---
+
+# **Bridging the Gap: Disparities in Postnatal Care Around the World**
+
+Motherhood is a universal experience, yet the journey after childbirth can vary greatly depending on where a woman gives birth. Postnatal care, the critical medical attention provided to mothers after delivery, is essential for both mom and baby's health. But as this data visualization suggests, access to this care is far from equal across the globe. Let's delve deeper into the disparities in postnatal care and explore the importance of ensuring every mother has a healthy start to her journey with her newborn.
+
+## DATA
+
+```{r}
+library(tidyverse)
+library(readr)
+library(maps)
+library(ggplot2)
+```
+
+```{r}
+getwd()
+
+indicator <- read_csv("Indicator.csv")
+metadata <- read_csv("unicef_metadata.csv")
+```
+
+```{r}
+indicator <- indicator %>% 
+  rename(year = time_period)
+
+merged_data <- merge(unicef_indicator_1, unicef_metadata, by = c("country", "year"))
+```
+
+## WORLD MAP
+
+## 2015: Postnatal Care - More Checkups, Unequal Access
+
+-   WHO updated guidelines in 2013 recommended **4 postnatal checkups** in the first 6 weeks (previously only 2).
+
+-   Improved monitoring for mothers and newborns.
+
+-   Disparities remained, with many women in developing countries lacking access.
+
+```{r}
+library(dplyr)
+library(ggmap)
+
+options(scipen = 999)
+
+pop_2015 <- unicef_metadata %>% 
+  filter(year == 2015)
+
+map_world <- map_data("world")
+
+map_pop_2015 <- full_join(map_world, pop_2015, by = c("region" = "country"))
+
+breaks <- c(0, 1e6, 2e6, 5e6, 1e7, 2e7, 5e7, 1e8)
+labels <- scales::comma(breaks)
+
+ggplot(data = map_pop_2015, aes(x = long, y = lat, group = group, fill = Population..total)) +
+  geom_polygon(color = "black", size = 0.1) +  
+  scale_fill_viridis_c(name = "Population", na.value = "grey90") +  
+  labs(title = "World Population Distribution (2015)") +  
+  theme_minimal() + 
+  theme(plot.title = element_text(size = 16, hjust = 0.5))+ 
+  theme(axis.text.x = element_blank(), axis.text.y = element_blank(),  
+        axis.title.x = element_blank(), axis.title.y = element_blank())  
+```
+
+## BAR CHART
+
+## Unequal Start: Postnatal Care Around the World
+
+**Disparity Exists:** Not all moms get recommended postnatal checkups (4 in first 6 weeks). City moms like Amina have access, but rural moms like Nneka often don't.
+
+**Consequences are Serious:** Without proper care, both moms and babies face health risks.
+
+**Change is Needed:** UNICEF works to improve access to trained professionals and support networks, aiming for a world where every mother has a healthy start with her newborn.
+
+```{r}
+# Create a bar chart
+ggplot(indicator, aes(x = reorder(country, -obs_value), y = obs_value, fill = sex)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bar Chart", x = "Country", y = "post-natal care") +
+  theme_minimal() 
+
+
+ggplot(indicator[indicator$sex != "Total", c("country", "obs_value", "sex")], aes(x = reorder(country, -obs_value), y = obs_value, fill = sex)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Bar Chart", x = "Country", y = "Post-Natal Care") +
+  theme(axis.text.x = element_text(angle =45, hjust = 1)) 
+
+
+```
+
+```{r}
+
+#A scatterplot with a linear regression line
+
+#new
+ggplot(data = indicator, aes(x = year, y = obs_value)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(title = "Scatter Plot", x = "Year", y = "Post Natal")
+  
+#female
+indicator_female <- indicator %>%
+  filter(sex == "Female")
+
+ggplot(data = indicator_female, aes(x = year, y = posnatal)) +
+  geom_point()
+```
+
+• **Importance:** Postnatal care is crucial for both mother and baby's health.
+
+• **Disparity:** Not all mothers receive recommended checkups (4 in first 6 weeks).
+
+• **Urban Advantage:** Mothers in well-resourced cities like Amina have better access.
+
+• **Rural Challenges:** Mothers in remote areas like Nneka face limited access due to resources and distance.
+
+• **Global Data:** Only 2/3 of mothers and newborns receive recommended checkups globally.
+
+• **Consequences:** Inadequate care risks maternal complications and newborn illnesses.
+
+• **UNICEF's Role:** Advocates for increased access, training, and community support.
+
+• **Goal:** Every mother, regardless of location, deserves quality postnatal care.
+
+## TIME SERIES
+
+## Ireland Postnatal Care: A Supportive System
+
+-   **Multiple Checkups:** Regular doctor/midwife appointments track mom & baby's health.
+
+-   **Public Health Nurse Visits:** Guidance on breastfeeding, baby care, and recovery.
+
+-   **Breastfeeding Support:** Resources available to help establish and maintain breastfeeding.
+
+-   **Mental Health Awareness:** Support for postpartum depression and anxiety.
+
+-   **Free Maternity Care:** Most checkups and some medications covered.
+
+**Remember:** Ask questions, seek help from loved ones, prioritize your well-being.
+
+```{r}
+library(ggplot2)
+
+# Filter the dataframe to include only rows for Afghanistan
+ireland_df <- metadata[metadata$country == "Ireland",]
+
+# Create a time series chart
+ggplot(ireland_df, aes(x = year, y = `Population, total`)) +
+  geom_line() +
+  labs(title = "Population of Ireland over time",
+       x = "Year",
+       y = "Population (total)") +
+  theme_minimal()
+```
+
+```{r}
+#A scatterplot with a linear regression line
+
+#new
+ggplot(data = indicator, aes(x = year, y = obs_value)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+#female
+indicator_female <- indicator %>%
+  filter(sex == "Female")
+
+ggplot(data = indicator_female, aes(x = year, y = obs_value)) +
+  geom_point()
+```
